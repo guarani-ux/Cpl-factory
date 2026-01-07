@@ -1,42 +1,46 @@
 import streamlit as st
 import pandas as pd
-from openai import OpenAI
 
-# 1. PAGE SETUP
-st.set_page_config(page_title="CPL Factory: Travertine Suite", layout="wide")
+st.set_page_config(page_title="CPL Travertine Suite", layout="wide")
 
-# 2. THE BRAIN
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
-# 3. GLOBAL INPUT (Sidebar)
+# --- SIDEBAR INPUT ---
 with st.sidebar:
     st.title("🏛️ CPL ARCHITECT")
-    project_name = st.text_input("Project Name", placeholder="e.g. Calgary Tech Skills")
+    project = st.text_input("Project Name", placeholder="Enter to unlock...")
     st.divider()
-    st.info("Operating in Travertine Mode")
+    st.info("Status: Travertine Mode Active")
 
-# 4. MAIN CONTENT AREA
-if project_name:
-    st.header(f"Project: {project_name}")
+# --- MAIN OUTPUT AREA ---
+if project:
+    st.header(f"💠 Project: {project}")
     
-    # THIS IS THE AREA YOU ARE LOOKING FOR
-    brief_input = st.text_area(
-        "📝 Enter Project Brief / Ideation Notes", 
-        placeholder="Type your vision here to turn it into a Travertine execution package...",
-        height=300
-    )
+    # INPUT SECTION
+    st.subheader("1. Ideation & Specialist Notes")
+    notes = st.text_area("Drop project specs here to build the package...", height=150)
     
-    if st.button("🚀 Generate Full Travertine Package"):
-        if brief_input:
-            with st.spinner("Processing Specialist Logic..."):
-                # Call GPT-4o for 2-page brief + Asana map
-                st.success("Package Generated! See tabs below.")
-                t1, t2 = st.tabs(["📄 2-Page Brief", "📋 Asana Roadmap"])
-                with t1:
-                    st.write("Detailed Script and Strategy...")
-                with t2:
-                    st.table(pd.DataFrame({"Task": ["SEO", "A-Roll", "B-Roll"], "Owner": ["Specialist", "Editor", "Lead"]}))
-        else:
-            st.error("Please add some notes to the brief area first.")
+    if st.button("🚀 EXECUTE TRAVERTINE PACKAGE"):
+        st.divider()
+        
+        # DELIVERABLES TABS
+        tab1, tab2, tab3 = st.tabs(["📄 2-Page Brief", "📋 Asana Roadmap", "🎯 SEO & Hooks"])
+        
+        with tab1:
+            st.markdown("### Executive Production Brief")
+            st.write("This section will generate your full 2-page script and strategy for specialists.")
+            st.download_button("Export Brief", "Sample Brief Content", file_name=f"{project}_Brief.md")
+
+        with tab2:
+            st.markdown("### 12-Step Implementation Map")
+            tasks = {
+                "Step": [1, 2, 3, 4],
+                "Action": ["Keyword Gap Analysis", "Script Compliance", "A-Roll Production", "Thumbnail A/B"],
+                "Owner": ["SEO Spec", "Project Lead", "Editor", "Designer"]
+            }
+            st.table(pd.DataFrame(tasks))
+
+        with tab3:
+            st.markdown("### Algorithmic Deliverables")
+            st.code("Primary Tag: Travertine_Execution\nFocus: High-Retention Executive Content")
+
 else:
-    st.warning("👈 Enter a Project Name in the sidebar to reveal the Ideation area.")
+    st.warning("👈 Enter a Project Name in the sidebar to reveal the Production Suite.")
