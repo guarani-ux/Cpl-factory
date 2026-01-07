@@ -1,46 +1,62 @@
 import streamlit as st
 import pandas as pd
+from openai import OpenAI
+from pypdf import PdfReader
+from docx import Document
+import io
 
-st.set_page_config(page_title="CPL Travertine Suite", layout="wide")
+st.set_page_config(page_title="CPL Travertine Architect", layout="wide")
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
-# --- SIDEBAR INPUT ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.title("🏛️ CPL ARCHITECT")
-    project = st.text_input("Project Name", placeholder="Enter to unlock...")
+    project = st.text_input("Project Name", value="Freedom to read")
     st.divider()
-    st.info("Status: Travertine Mode Active")
+    st.info("Travertine Engine: Active")
 
-# --- MAIN OUTPUT AREA ---
+# --- MAIN INTERFACE ---
 if project:
     st.header(f"💠 Project: {project}")
     
-    # INPUT SECTION
-    st.subheader("1. Ideation & Specialist Notes")
-    notes = st.text_area("Drop project specs here to build the package...", height=150)
+    # NEW: MULTI-SOURCE INPUT
+    col1, col2 = st.columns(2)
     
+    with col1:
+        st.subheader("Option A: Manual Ideation")
+        manual_notes = st.text_area("Scratchpad notes...", height=200)
+
+    with col2:
+        st.subheader("Option B: Upload Document")
+        uploaded_file = st.file_uploader("Drop PDF or Word Doc here", type=["pdf", "docx"])
+
     if st.button("🚀 EXECUTE TRAVERTINE PACKAGE"):
-        st.divider()
+        context = manual_notes
         
-        # DELIVERABLES TABS
-        tab1, tab2, tab3 = st.tabs(["📄 2-Page Brief", "📋 Asana Roadmap", "🎯 SEO & Hooks"])
-        
-        with tab1:
-            st.markdown("### Executive Production Brief")
-            st.write("This section will generate your full 2-page script and strategy for specialists.")
-            st.download_button("Export Brief", "Sample Brief Content", file_name=f"{project}_Brief.md")
+        # Logic to extract text from files
+        if uploaded_file:
+            if uploaded_file.type == "application/pdf":
+                reader = PdfReader(uploaded_file)
+                context += "\n" + "".join([page.extract_text() for page in reader.pages])
+            elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                doc = Document(io.BytesIO(uploaded_file.read()))
+                context += "\n" + "".join([para.text for para in doc.paragraphs])
 
-        with tab2:
-            st.markdown("### 12-Step Implementation Map")
-            tasks = {
-                "Step": [1, 2, 3, 4],
-                "Action": ["Keyword Gap Analysis", "Script Compliance", "A-Roll Production", "Thumbnail A/B"],
-                "Owner": ["SEO Spec", "Project Lead", "Editor", "Designer"]
-            }
-            st.table(pd.DataFrame(tasks))
-
-        with tab3:
-            st.markdown("### Algorithmic Deliverables")
-            st.code("Primary Tag: Travertine_Execution\nFocus: High-Retention Executive Content")
-
-else:
-    st.warning("👈 Enter a Project Name in the sidebar to reveal the Production Suite.")
+        if context:
+            with st.spinner("Analyzing Brief & Designing Package..."):
+                # Specialist Prompting
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[{"role": "system", "content": "Generate a 2-page production brief and 12-step Asana map."},
+                              {"role": "user", "content": f"Context: {context}"}]
+                )
+                output = response.choices[0].message.content
+                
+                # Deliverables Display
+                t1, t2 = st.tabs(["📄 Full Travertine Brief", "📋 Asana Roadmap"])
+                with t1:
+                    st.markdown(output)
+                with t2:
+                    st.table(pd.DataFrame({"Step": range(1,5), "Task": ["SEO Analysis", "Script Lockdown", "A-Roll", "Distribution"]}))
+        else:
+            st.error("Please provide manual notes or upload a document to proceed.")
