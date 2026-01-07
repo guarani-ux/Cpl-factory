@@ -5,58 +5,57 @@ from pypdf import PdfReader
 from docx import Document
 import io
 
+# EXECUTION ENGINE CONFIG
 st.set_page_config(page_title="CPL Travertine Architect", layout="wide")
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # --- SIDEBAR ---
 with st.sidebar:
     st.title("🏛️ CPL ARCHITECT")
-    project = st.text_input("Project Name", value="Freedom to read")
+    project = st.text_input("Project Name", placeholder="e.g. Calgary Tech Strategy")
     st.divider()
-    st.info("Travertine Engine: Active")
+    st.info("Status: Travertine Mode Active")
 
 # --- MAIN INTERFACE ---
 if project:
     st.header(f"💠 Project: {project}")
     
-    # NEW: MULTI-SOURCE INPUT
+    # DUAL INPUT SECTION
     col1, col2 = st.columns(2)
-    
     with col1:
-        st.subheader("Option A: Manual Ideation")
-        manual_notes = st.text_area("Scratchpad notes...", height=200)
-
+        manual_notes = st.text_area("1. Ideation & Specialist Notes", height=200, placeholder="Type your vision here...")
     with col2:
-        st.subheader("Option B: Upload Document")
-        uploaded_file = st.file_uploader("Drop PDF or Word Doc here", type=["pdf", "docx"])
+        uploaded_file = st.file_uploader("2. Drop PDF or Word Doc", type=["pdf", "docx"])
 
     if st.button("🚀 EXECUTE TRAVERTINE PACKAGE"):
+        # Text Extraction Logic
         context = manual_notes
-        
-        # Logic to extract text from files
         if uploaded_file:
             if uploaded_file.type == "application/pdf":
-                reader = PdfReader(uploaded_file)
-                context += "\n" + "".join([page.extract_text() for page in reader.pages])
-            elif uploaded_file.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                pdf_reader = PdfReader(uploaded_file)
+                context += "\n" + "".join([p.extract_text() for p in pdf_reader.pages])
+            else:
                 doc = Document(io.BytesIO(uploaded_file.read()))
-                context += "\n" + "".join([para.text for para in doc.paragraphs])
+                context += "\n" + "".join([p.text for p in doc.paragraphs])
 
         if context:
-            with st.spinner("Analyzing Brief & Designing Package..."):
-                # Specialist Prompting
+            with st.spinner("Architecting Deliverables..."):
+                # Professional Prompting for 2-Page Brief
                 response = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[{"role": "system", "content": "Generate a 2-page production brief and 12-step Asana map."},
-                              {"role": "user", "content": f"Context: {context}"}]
+                              {"role": "user", "content": f"Project: {project}\nContext: {context}"}]
                 )
-                output = response.choices[0].message.content
                 
-                # Deliverables Display
-                t1, t2 = st.tabs(["📄 Full Travertine Brief", "📋 Asana Roadmap"])
-                with t1:
-                    st.markdown(output)
-                with t2:
-                    st.table(pd.DataFrame({"Step": range(1,5), "Task": ["SEO Analysis", "Script Lockdown", "A-Roll", "Distribution"]}))
+                # OUTPUT TABS
+                tab1, tab2, tab3 = st.tabs(["📄 2-Page Brief", "📋 Asana Map", "🎯 SEO Strategy"])
+                with tab1:
+                    st.markdown(response.choices[0].message.content)
+                with tab2:
+                    st.table(pd.DataFrame({"Step": range(1,7), "Task": ["SEO Analysis", "Script Lockdown", "A-Roll", "B-Roll", "Edit", "Deploy"]}))
+                with tab3:
+                    st.code("Primary Tag: Travertine_Package_V1")
         else:
-            st.error("Please provide manual notes or upload a document to proceed.")
+            st.error("Please provide notes or a document to generate the package.")
+else:
+    st.warning("👈 Enter a Project Name in the sidebar to reveal the Production Suite.")
